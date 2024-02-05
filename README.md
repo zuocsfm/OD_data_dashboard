@@ -1,1 +1,1 @@
-# travel_data_dashboard
+# An analytical dashboard for trip data
