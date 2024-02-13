@@ -52,7 +52,7 @@ with st.sidebar:
                                    min_value=0,
                                    max_value=172,
                                    value=(0,172))
-    new_distance = tuple((i * 1000) for i in new_travel_time)
+    new_distance = tuple((i * 1000) for i in new_distance)
 
     new_mode = st.multiselect("Choose transport mode:", transport_mode_list, transport_mode_list )
 
