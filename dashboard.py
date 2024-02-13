@@ -22,7 +22,7 @@ st.set_page_config(
 
 st.title("Trip Data Analysis")
 
-data = pd.read_csv("https://raw.githubusercontent.com/zuocsfm/travel_data_dashboard/main/data/origin-destination.csv", sep=';')
+data = pd.read_csv("./data/origin-destination.csv", sep=';')
 transport_mode_list = data['mode'].unique().tolist()
 departure_time_list = data['departure_time'].unique().tolist()
 travel_time_list = data['travel_time'].unique().tolist()
