@@ -7,6 +7,7 @@ import numpy as np
 import plotly.express as px
 from streamlit_extras.metric_cards import style_metric_cards
 import pydeck as pdk
+import math
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -84,24 +85,24 @@ selected_subset[['destination_lon', 'destination_lat']] = pd.DataFrame(selected_
 #  Summary - row 1
 # ------------------------------------------------------------------------
 
-summary1, summary2, summary3, summary4, summary5 = st.columns(5)
+row1_1, row1_2, row1_3, row1_4, row1_5 = st.columns(5)
 
 # display the statistics
 
 trip_number = len((selected_subset['person_id'].astype(str) + "_" + selected_subset['person_trip_id'].astype(str)).unique())
-summary1.metric("Number of trips", trip_number)
+row1_1.metric("Number of trips", trip_number)
 
 leg_number = len(selected_subset.index)
-summary2.metric("Number of legs", leg_number)
+row1_2.metric("Number of legs", leg_number)
 
 person_number = len(selected_subset['person_id'].unique())
-summary3.metric("Number of persons", person_number)
+row1_3.metric("Number of persons", person_number)
 
 travel_time_average = selected_subset['travel_time'].mean()
-summary4.metric("Average travel time (minutes)", (travel_time_average/60).round(2))
+row1_4.metric("Average travel time (minutes)", (travel_time_average/60).round(2))
 
 routed_distance_ave = selected_subset['routed_distance'].mean().round(2)
-summary5.metric("Average routed distance (km)", (routed_distance_ave/1000).round(2))
+row1_5.metric("Average routed distance (km)", (routed_distance_ave/1000).round(2))
 
 style_metric_cards()
 
@@ -109,18 +110,18 @@ style_metric_cards()
 #  Chart - row 2
 # ------------------------------------------------------------------------
 
-row2_1, row2_2, row2_3 = st.columns(3)
+row2_1, row2_2 = st.columns(2)
 
 # ------------------------------------------------------------------------
 #  Chart
 # ------------------------------------------------------------------------
 
-chart1, chart2, chart3, chart4 = st.columns(4)
-travel_mode = selected_subset.groupby(['mode'])['mode'].count()
-travel_mode = pd.DataFrame({'mode':travel_mode.index, 'number':travel_mode.values})
+# chart1, chart2, chart3, chart4 = st.columns(4)
+# travel_mode = selected_subset.groupby(['mode'])['mode'].count()
+# travel_mode = pd.DataFrame({'mode':travel_mode.index, 'number':travel_mode.values})
 
-row2_3.write("Number of Trips by Travel Mode")
-row2_3.bar_chart(travel_mode, x='mode', y='number')
+# row2_3.write("Number of Trips by Travel Mode")
+# row2_3.bar_chart(travel_mode, x='mode', y='number')
 
 
 
@@ -248,6 +249,27 @@ row2_2.pydeck_chart(pdk.Deck(
             }
         }
 ))
+
+# ------------------------------------------------------------------------
+#  Show travel mode per hour (while trips)
+# ------------------------------------------------------------------------
+st.write("Travel modes in every hour")
+# initialize the traval mode per hour matrix
+travel_mode_hour = pd.DataFrame(0, index=np.arange(25), columns = ["car", "walk", "pt","car_passenger", "bike"])
+
+# calculate travel mode per hour
+def calc_mode_hour(mode, start_time, duration, matrix):
+    end_time = start_time + duration
+    start_hour = math.floor(start_time/60/60)
+    end_hour = math.ceil(end_time/60/60)
+    matrix.loc[start_hour:(end_hour + 1), mode] = matrix.loc[start_hour:(end_hour + 1), mode] + 1
+    return matrix
+
+for index, row in selected_subset.iterrows():
+    travel_mode_hour = calc_mode_hour(row['mode'], row['departure_time'], row['travel_time'],travel_mode_hour)
+
+st.bar_chart(travel_mode_hour, color=['#7fc97f','#beaed4','#fdc086','#ffff99','#386cb0'])
+
 
 # ------------------------------------------------------------------------
 #  Show the Raw data
