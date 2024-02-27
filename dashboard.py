@@ -195,7 +195,7 @@ row2_1.pydeck_chart(pdk.Deck(
 selected_subset['arrival_time'] = selected_subset['departure_time'] + selected_subset['travel_time']
 max_legs = max(selected_subset['leg_index'].unique().tolist())
 
-df_stops = pd.DataFrame(columns=['person_id', 'stop_index', 'lat', 'lon', 'end_time', 'start_time', 'duration', 'mode'])
+df_stops = pd.DataFrame(columns=['person_id', 'stop_index', 'lat', 'lon', 'end_time', 'start_time', 'duration'])
 
 for i in range(1, max_legs+1):
     # find arrival and departure trip pairs
@@ -220,7 +220,7 @@ for i in range(1, max_legs+1):
         stop_end_time = int(stop_end['departure_time'].tolist()[0])
         stop_start_time = int(stop_start['arrival_time'].tolist()[0])
         stop_duration = stop_end_time - stop_start_time
-        stop_mode = stop_end['mode'] # a stop does not have a mode, this is only used to generate a dataframe correctly
+        # stop_mode = stop_end['mode'] # a stop does not have a mode, this is only used to generate a dataframe correctly
 
         # pre_leg_id =
         # next_leg_id =
@@ -233,7 +233,7 @@ for i in range(1, max_legs+1):
         new_stop['end_time'] = stop_end_time
         new_stop['start_time'] = stop_start_time
         new_stop['duration'] = stop_duration
-        new_stop['mode'] = stop_mode 
+        # new_stop['mode'] = stop_mode 
 
 
         df_new_stop = pd.DataFrame.from_dict(new_stop) #
