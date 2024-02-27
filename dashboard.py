@@ -111,7 +111,7 @@ style_metric_cards()
 #  Chart - row 2
 # ------------------------------------------------------------------------
 
-row2_1, row2_2 = st.columns(2)
+row2_1, row2_2, row2_3 = st.columns(3)
 
 # ------------------------------------------------------------------------
 #  Chart
@@ -195,7 +195,8 @@ row2_1.pydeck_chart(pdk.Deck(
 selected_subset['arrival_time'] = selected_subset['departure_time'] + selected_subset['travel_time']
 max_legs = max(selected_subset['leg_index'].unique().tolist())
 
-df_stops = pd.DataFrame(columns=['person_id', 'stop_index', 'lat', 'lon', 'end_time', 'start_time', 'duration'])
+df_transitional_stops = pd.DataFrame(columns=['person_id', 'stop_index', 'lat', 'lon', 'end_time', 'start_time', 'duration'])
+df_activity_stops = pd.DataFrame(columns=['person_id', 'stop_index', 'lat', 'lon', 'end_time', 'start_time', 'duration'])
 
 for i in range(1, max_legs+1):
     # find arrival and departure trip pairs
@@ -209,9 +210,6 @@ for i in range(1, max_legs+1):
     common_person = set(arrival_person) & set(departure_person)
 
     for p in common_person:
-        new_transitional_stop = {}
-        new_activity_stop = {}
-
         stop_end = selected_subset[(selected_subset['person_id'] == p) & (selected_subset['leg_index'] == i)]
         stop_start = selected_subset[(selected_subset['person_id'] == p) & (selected_subset['leg_index'] == (i - 1))]
 
@@ -222,25 +220,41 @@ for i in range(1, max_legs+1):
         stop_duration = stop_end_time - stop_start_time
         # stop_mode = stop_end['mode'] # a stop does not have a mode, this is only used to generate a dataframe correctly
 
-        # pre_leg_id =
-        # next_leg_id =
-
-        new_stop = {}
-        new_stop['person_id'] = p
-        new_stop['stop_index'] = i
-        new_stop['lat'] = stop_lat
-        new_stop['lon'] = stop_lon
-        new_stop['end_time'] = stop_end_time
-        new_stop['start_time'] = stop_start_time
-        new_stop['duration'] = stop_duration
-        # new_stop['mode'] = stop_mode 
+        # new_stop = {}
 
 
-        df_new_stop = pd.DataFrame.from_dict(new_stop) #
-        df_stops = pd.concat([df_stops, df_new_stop], ignore_index=True)
+
+        # the different trip_id indicates an agent had activity
+        if stop_end['person_trip_id'].tolist()[0] == stop_start['person_trip_id'].tolist()[0]:
+            new_transitional_stop = {}
+            new_transitional_stop['person_id'] = p
+            new_transitional_stop['stop_index'] = i
+            new_transitional_stop['lat'] = stop_lat
+            new_transitional_stop['lon'] = stop_lon
+            new_transitional_stop['end_time'] = stop_end_time
+            new_transitional_stop['start_time'] = stop_start_time
+            new_transitional_stop['duration'] = stop_duration
+            # new_transitional_stop['mode'] = stop_mode
+
+            df_new_transitional_stop = pd.DataFrame.from_dict(new_transitional_stop)  #
+            df_transitional_stops = pd.concat([df_transitional_stops, df_new_transitional_stop], ignore_index=True)
+        # the identical trip id indicates an agent had activity
+        else:
+            new_activity_stop = {}
+            new_activity_stop['person_id'] = p
+            new_activity_stop['stop_index'] = i
+            new_activity_stop['lat'] = stop_lat
+            new_activity_stop['lon'] = stop_lon
+            new_activity_stop['end_time'] = stop_end_time
+            new_activity_stop['start_time'] = stop_start_time
+            new_activity_stop['duration'] = stop_duration
+            # new_activity_stop['mode'] = stop_mode
+
+            df_new_activity_stop = pd.DataFrame.from_dict(new_activity_stop)  #
+            df_activity_stops = pd.concat([df_activity_stops, df_new_activity_stop], ignore_index=True)
 
 # TODO: show the stop duration in the visualization instead of number of stops
-row2_2.write("The stops in trips")
+row2_2.write("The transitional stops")
 row2_2.pydeck_chart(pdk.Deck(
     map_style=None,
     initial_view_state=pdk.ViewState(
@@ -252,7 +266,37 @@ row2_2.pydeck_chart(pdk.Deck(
     layers=[
         pdk.Layer(
            'HexagonLayer',
-           data=df_stops,
+           data=df_transitional_stops,
+           get_position='[lon, lat]',
+           radius=500,
+           elevation_scale=4,
+           elevation_range=[0, 5000],
+           pickable=True,
+           extruded=True,
+        ),
+    ],
+    tooltip={
+            'html': '<b>Number of stops:</b> {elevationValue}',
+            'style': {
+                'color': 'white'
+            }
+        }
+))
+
+# TODO: show the stop duration in the visualization instead of number of stops
+row2_3.write("The activity stops")
+row2_3.pydeck_chart(pdk.Deck(
+    map_style=None,
+    initial_view_state=pdk.ViewState(
+        latitude=41.9,
+        longitude=9.1,
+        zoom=8,
+        pitch=170,
+    ),
+    layers=[
+        pdk.Layer(
+           'HexagonLayer',
+           data=df_activity_stops,
            get_position='[lon, lat]',
            radius=500,
            elevation_scale=4,
