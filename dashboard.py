@@ -29,6 +29,22 @@ departure_time_list = data['departure_time'].unique().tolist()
 travel_time_list = data['travel_time'].unique().tolist()
 
 # ------------------------------------------------------------------------
+#  calculate the coordinates
+# ------------------------------------------------------------------------
+
+# convert the coordinates to latitude and longitude
+proj = pyproj.Transformer.from_crs( 2154, 4326, always_xy=True)
+
+# get the latitude and longitude
+data['origin'] = data.apply(lambda row: proj.transform(row['origin_x'], row['origin_y']), axis=1)
+data[['origin_lon', 'origin_lat']] = pd.DataFrame(data['origin'].tolist(), index=data.index)
+
+# get the latitude and longitude
+data['destination'] = data.apply(lambda row: proj.transform(row['destination_x'], row['destination_y']), axis=1)
+data[['destination_lon', 'destination_lat']] = pd.DataFrame(data['destination'].tolist(), index=data.index)
+
+
+# ------------------------------------------------------------------------
 #  sidebar
 # ------------------------------------------------------------------------
 
@@ -63,21 +79,6 @@ selected_subset = (data['departure_time'].between(*new_departure)) \
                     & (data['routed_distance'].between(*new_distance)))
 
 selected_subset = data[selected_subset]
-
-# ------------------------------------------------------------------------
-#  calculate the coordinates
-# ------------------------------------------------------------------------
-
-# convert the coordinates to latitude and longitude
-proj = pyproj.Transformer.from_crs( 2154, 4326, always_xy=True)
-
-# get the latitude and longitude
-selected_subset['origin'] = selected_subset.apply(lambda row: proj.transform(row['origin_x'], row['origin_y']), axis=1)
-selected_subset[['origin_lon', 'origin_lat']] = pd.DataFrame(selected_subset['origin'].tolist(), index=selected_subset.index)
-
-# get the latitude and longitude
-selected_subset['destination'] = selected_subset.apply(lambda row: proj.transform(row['destination_x'], row['destination_y']), axis=1)
-selected_subset[['destination_lon', 'destination_lat']] = pd.DataFrame(selected_subset['destination'].tolist(), index=selected_subset.index)
 
 
 
@@ -192,11 +193,11 @@ row2_1.pydeck_chart(pdk.Deck(
 # calculate breaks
 
 selected_subset['arrival_time'] = selected_subset['departure_time'] + selected_subset['travel_time']
-max_trip = max(selected_subset['leg_index'].unique().tolist())
+max_legs = max(selected_subset['leg_index'].unique().tolist())
 
 df_stops = pd.DataFrame(columns=['person_id', 'stop_index', 'lat', 'lon', 'end_time', 'start_time', 'duration', 'mode'])
 
-for i in range(1, max_trip+1):
+for i in range(1, max_legs+1):
     # find arrival and departure trip pairs
     df_arrival = selected_subset.loc[selected_subset['leg_index'] == i]
     df_departure = selected_subset.loc[selected_subset['leg_index'] == (i-1)]
@@ -208,19 +209,37 @@ for i in range(1, max_trip+1):
     common_person = set(arrival_person) & set(departure_person)
 
     for p in common_person:
+        new_transitional_stop = {}
+        new_activity_stop = {}
+
+        stop_end = selected_subset[(selected_subset['person_id'] == p) & (selected_subset['leg_index'] == i)]
+        stop_start = selected_subset[(selected_subset['person_id'] == p) & (selected_subset['leg_index'] == (i - 1))]
+
+        stop_lat = stop_end['origin_lat']#.tolist()[0]
+        stop_lon = stop_end['origin_lon']#.tolist()[0]
+        stop_end_time = int(stop_end['departure_time'].tolist()[0])
+        stop_start_time = int(stop_start['arrival_time'].tolist()[0])
+        stop_duration = stop_end_time - stop_start_time
+        stop_mode = stop_end['mode'] # a stop does not have a mode, this is only used to generate a dataframe correctly
+
+        # pre_leg_id =
+        # next_leg_id =
+
         new_stop = {}
         new_stop['person_id'] = p
         new_stop['stop_index'] = i
-        new_stop['lat'] = selected_subset[(selected_subset['person_id'] == p) & (selected_subset['leg_index'] == i)]['origin_lat']
-        new_stop['lon'] = selected_subset[(selected_subset['person_id'] == p) & (selected_subset['leg_index'] == i)]['origin_lon']
-        new_stop['end_time'] = int(selected_subset[(selected_subset['person_id'] == p) & (selected_subset['leg_index'] == i)]['departure_time'].tolist()[0])
-        new_stop['start_time'] = int(selected_subset[(selected_subset['person_id'] == p) & (selected_subset['leg_index'] == (i - 1))]['arrival_time'].tolist()[0])
-        new_stop['duration'] = new_stop['end_time'] - new_stop['start_time']
-        new_stop['mode'] = selected_subset[(selected_subset['person_id'] == p) & (selected_subset['leg_index'] == i)]['mode']
+        new_stop['lat'] = stop_lat
+        new_stop['lon'] = stop_lon
+        new_stop['end_time'] = stop_end_time
+        new_stop['start_time'] = stop_start_time
+        new_stop['duration'] = stop_duration
+        new_stop['mode'] = stop_mode 
 
-        df_new_stop = pd.DataFrame.from_dict(new_stop)
+
+        df_new_stop = pd.DataFrame.from_dict(new_stop) #
         df_stops = pd.concat([df_stops, df_new_stop], ignore_index=True)
 
+# TODO: show the stop duration in the visualization instead of number of stops
 row2_2.write("The stops in trips")
 row2_2.pydeck_chart(pdk.Deck(
     map_style=None,
@@ -275,7 +294,7 @@ st.bar_chart(travel_mode_hour, color=['#7fc97f','#beaed4','#fdc086','#ffff99','#
 #  Show the Raw data
 # ------------------------------------------------------------------------
 # delete the intermediate columns
-selected_subset.drop(['origin','destination', 'origin_lon', 'origin_lat', 'destination_lat', 'destination_lon'], axis='columns', inplace=True)
+selected_subset.drop(['origin','destination', 'origin_lon', 'origin_lat', 'destination_lat', 'destination_lon', 'arrival_time'], axis='columns', inplace=True)
 
 st.write("Filtered dataset")
 
