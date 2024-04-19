@@ -49,8 +49,8 @@ data[['destination_lon', 'destination_lat']] = pd.DataFrame(data['destination'].
 # ------------------------------------------------------------------------
 
 with st.sidebar:
-    st.write("Data source: MATSim (https://www.matsim.org/)")
-    st.title("Data selection")
+    # st.write("Data source: MATSim (https://www.matsim.org/)")
+    st.title("Data filters")
 
     new_departure = st.slider(label="Select a departure time range (hour):",
                            min_value=6,
@@ -86,7 +86,7 @@ selected_subset = data[selected_subset]
 #  Summary - row 1
 # ------------------------------------------------------------------------
 
-row1_1, row1_2, row1_3, row1_4, row1_5 = st.columns(5)
+row1_1, row1_2, row1_3, row1_4, row1_5, row1_6 = st.columns(6)
 
 # display the statistics
 
@@ -97,13 +97,15 @@ leg_number = len(selected_subset.index)
 row1_2.metric("Number of legs", leg_number)
 
 person_number = len(selected_subset['person_id'].unique())
-row1_3.metric("Number of persons", person_number)
+row1_3.metric("Number of agents", person_number)
 
 travel_time_average = selected_subset['travel_time'].mean()
 row1_4.metric("Average travel time (minutes)", (travel_time_average/60).round(2))
 
 routed_distance_ave = selected_subset['routed_distance'].mean().round(2)
 row1_5.metric("Average routed distance (km)", (routed_distance_ave/1000).round(2))
+
+row1_6.metric("Average speed (km/h)", (routed_distance_ave/travel_time_average*60).round(2))
 
 style_metric_cards()
 
@@ -154,7 +156,7 @@ selected_subset[['destination_lon', 'destination_lat']] = pd.DataFrame(selected_
 GREEN_RGB = [98, 115, 19, 80]
 RED_RGB = [183, 53, 45, 80]
 
-row2_1.write("The origins and destinations")
+row2_1.subheader("The origins and destinations")
 row2_1.pydeck_chart(pdk.Deck(
     map_style=None,
     initial_view_state=pdk.ViewState(
@@ -254,8 +256,8 @@ for i in range(1, max_legs+1):
             df_activity_stops = pd.concat([df_activity_stops, df_new_activity_stop], ignore_index=True)
 
 # TODO: show the stop duration in the visualization instead of number of stops
-row2_2.write("The transitional stops")
-row2_2.pydeck_chart(pdk.Deck(
+row2_3.subheader("The transitional stops")
+row2_3.pydeck_chart(pdk.Deck(
     map_style=None,
     initial_view_state=pdk.ViewState(
         latitude=41.9,
@@ -284,8 +286,8 @@ row2_2.pydeck_chart(pdk.Deck(
 ))
 
 # TODO: show the stop duration in the visualization instead of number of stops
-row2_3.write("The activity stops")
-row2_3.pydeck_chart(pdk.Deck(
+row2_2.subheader("The activity stops")
+row2_2.pydeck_chart(pdk.Deck(
     map_style=None,
     initial_view_state=pdk.ViewState(
         latitude=41.9,
@@ -316,7 +318,7 @@ row2_3.pydeck_chart(pdk.Deck(
 # ------------------------------------------------------------------------
 #  Show travel mode per hour (while trips)
 # ------------------------------------------------------------------------
-st.write("Travel modes in every hour")
+st.subheader("Travel modes in every hour")
 # initialize the traval mode per hour matrix
 travel_mode_hour = pd.DataFrame(0, index=np.arange(25), columns = ["car", "walk", "pt","car_passenger", "bike"])
 
@@ -340,7 +342,7 @@ st.bar_chart(travel_mode_hour, color=['#7fc97f','#beaed4','#fdc086','#ffff99','#
 # delete the intermediate columns
 selected_subset.drop(['origin','destination', 'origin_lon', 'origin_lat', 'destination_lat', 'destination_lon', 'arrival_time'], axis='columns', inplace=True)
 
-st.write("Filtered dataset")
+st.subheader("Filtered dataset")
 
 st.dataframe(selected_subset, width=2000)
 
