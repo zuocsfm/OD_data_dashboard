@@ -15,7 +15,7 @@ warnings.filterwarnings('ignore')
 import matplotlib.pyplot as plt
 
 st.set_page_config(
-    page_title="Transport Data Analysis Dashboard",
+    page_title="Origin-Destination Data Analysis Dashboard",
     page_icon=":bar_chart:",
     layout="wide",
 )
