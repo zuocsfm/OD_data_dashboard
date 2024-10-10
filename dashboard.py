@@ -320,7 +320,7 @@ row2_2.pydeck_chart(pdk.Deck(
 # ------------------------------------------------------------------------
 st.subheader("Travel modes in every hour")
 # initialize the traval mode per hour matrix
-travel_mode_hour = pd.DataFrame(0, index=np.arange(25), columns = ["car", "walk", "pt","car_passenger", "bike"])
+travel_mode_hour = pd.DataFrame(0, index=np.arange(25), columns = ["car", "walk", "public_transport","car_passenger", "bike"])
 
 # calculate travel mode per hour
 def calc_mode_hour(mode, start_time, duration, matrix):
