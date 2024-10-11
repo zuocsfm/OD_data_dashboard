@@ -21,7 +21,7 @@ st.set_page_config(
 )
 
 
-st.title("Trip Data Analysis")
+st.title("Origin-Destination Data Analysis Dashboard")
 
 data = pd.read_csv("./data/origin-destination.csv", sep=';')
 transport_mode_list = data['mode'].unique().tolist()
