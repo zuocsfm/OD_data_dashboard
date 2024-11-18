@@ -1,1 +1,2 @@
-# An analytical dashboard for trip data
+# An analytical dashboard for origin-destination (OD) data
+
